@@ -3,27 +3,27 @@ import UIKit
 enum PdaState: CustomStringConvertible, Hashable {
     var description: String {
         switch self {
+        case .A: return "<A>"
+        case .D: return "<D>"
+        case .B: return "<B>"
         case .E: return "<E>"
-        case .E2: return "<E2>"
-        case .T: return "<T>"
-        case .T2: return "<T2>"
-        case .F: return "<F>"
+        case .C: return "<C>"
         }
     }
     
     // States
+    case A
+    case D
+    case B
     case E
-    case E2
-    case T
-    case T2
-    case F
+    case C
 }
 
 enum Input: String, Hashable {
     case a
     case b
     case c
-    case plus = "+"
+    case minus = "-"
     case asterisk = "*"
     case leftBracket = "("
     case rightBracket = ")"
@@ -55,29 +55,48 @@ struct PdaStateInput: Hashable {
 
 
 let mTable: [PdaStateInput: [StateSymbol]] = [
-    .init(.E, .a): [.state(.T), .state(.E2)],
-    .init(.E, .b): [.state(.T), .state(.E2)],
-    .init(.E, .c): [.state(.T), .state(.E2)],
-    .init(.E, .leftBracket): [.state(.T), .state(.E2)],
-
-    .init(.E2, .plus): [.terminal(.plus), .state(.T), .state(.E2)],
-    .init(.E2, .rightBracket): [.empty],
-    .init(.E2, .dollar): [.empty],
-
-    .init(.T, .a): [.state(.F), .state(.T2)],
-    .init(.T, .b): [.state(.F), .state(.T2)],
-    .init(.T, .c): [.state(.F), .state(.T2)],
-    .init(.T, .leftBracket): [.state(.F), .state(.T2)],
-
-    .init(.T2, .plus): [.empty],
-    .init(.T2, .asterisk): [.terminal(.asterisk), .state(.F), .state(.T2)],
-    .init(.T2, .rightBracket): [.empty],
-    .init(.T2, .dollar): [.empty],
-
-    .init(.F, .a): [.terminal(.a)],
-    .init(.F, .b): [.terminal(.b)],
-    .init(.F, .c): [.terminal(.c)],
-    .init(.F, .leftBracket): [.terminal(.leftBracket), .state(.E), .terminal(.rightBracket)]
+    .init(.A, .a): [.state(.B), .state(.D)],
+    .init(.A, .b): [.state(.B), .state(.D)],
+    .init(.A, .c): [.state(.B), .state(.D)],
+    .init(.B, .a): [.state(.C), .state(.E)],
+    .init(.B, .b): [.state(.C), .state(.E)],
+    .init(.B, .c): [.state(.C), .state(.E)],
+    .init(.C, .a): [.terminal(.a)],
+    .init(.C, .b): [.terminal(.b)],
+    .init(.C, .c): [.terminal(.c)],
+    .init(.D, .minus): [.terminal(.minus), .state(.B), .state(.D)],
+    .init(.E, .minus): [.empty],
+    .init(.E, .asterisk): [.terminal(.asterisk), .state(.C), .state(.E)],
+    .init(.A, .leftBracket): [.state(.B), .state(.D)],
+    .init(.B, .leftBracket): [.state(.C), .state(.E)],
+    .init(.C, .leftBracket): [.terminal(.leftBracket), .state(.A), .terminal(.rightBracket)],
+    .init(.D, .rightBracket): [.empty],
+    .init(.E, .rightBracket): [.empty],
+    .init(.D, .dollar): [.empty],
+    .init(.E, .dollar): [.empty]
+//    .init(.E, .a): [.state(.T), .state(.E2)],
+//    .init(.E, .b): [.state(.T), .state(.E2)],
+//    .init(.E, .c): [.state(.T), .state(.E2)],
+//    .init(.E, .leftBracket): [.state(.T), .state(.E2)],
+//
+//    .init(.E2, .plus): [.terminal(.plus), .state(.T), .state(.E2)],
+//    .init(.E2, .rightBracket): [.empty],
+//    .init(.E2, .dollar): [.empty],
+//
+//    .init(.T, .a): [.state(.F), .state(.T2)],
+//    .init(.T, .b): [.state(.F), .state(.T2)],
+//    .init(.T, .c): [.state(.F), .state(.T2)],
+//    .init(.T, .leftBracket): [.state(.F), .state(.T2)],
+//
+//    .init(.T2, .plus): [.empty],
+//    .init(.T2, .asterisk): [.terminal(.asterisk), .state(.F), .state(.T2)],
+//    .init(.T2, .rightBracket): [.empty],
+//    .init(.T2, .dollar): [.empty],
+//
+//    .init(.F, .a): [.terminal(.a)],
+//    .init(.F, .b): [.terminal(.b)],
+//    .init(.F, .c): [.terminal(.c)],
+//    .init(.F, .leftBracket): [.terminal(.leftBracket), .state(.E), .terminal(.rightBracket)]
 ]
 
 struct StringError: Error, LocalizedError {
@@ -113,7 +132,7 @@ class Pda {
     
     func analyze() throws {
         stack.append(.terminal(.dollar))
-        stack.append(.state(.E))
+        stack.append(.state(.A))
         log()
         try recursive()
     }
@@ -140,7 +159,7 @@ class Pda {
     }
 }
 
-let pda = Pda("(b+a)*c$")
+let pda = Pda("(a-b)*c$")
 do {
     try pda.analyze()
 } catch {
